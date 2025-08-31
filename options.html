@@ -5,12 +5,170 @@
     <title>HoverPrompt 设置</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin: 16px; }
-      .muted { color: #64748b; font-size: 14px; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 480px;
+        width: 100%;
+        text-align: center;
+      }
+
+      .logo {
+        font-size: 32px;
+        margin-bottom: 16px;
+      }
+
+      h1 {
+        color: #1f2937;
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .subtitle {
+        color: #6b7280;
+        font-size: 14px;
+        margin-bottom: 24px;
+        line-height: 1.5;
+      }
+
+      .feature-list {
+        text-align: left;
+        margin: 24px 0;
+        padding: 20px;
+        background: #f9fafb;
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: #374151;
+      }
+
+      .feature-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .feature-icon {
+        margin-right: 8px;
+        font-size: 16px;
+      }
+
+      .usage-steps {
+        background: #eff6ff;
+        border: 1px solid #dbeafe;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 24px 0;
+      }
+
+      .step {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: #1e40af;
+      }
+
+      .step:last-child {
+        margin-bottom: 0;
+      }
+
+      .step-number {
+        background: #3b82f6;
+        color: white;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 12px;
+        flex-shrink: 0;
+        margin-top: 1px;
+      }
+
+      .footer {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #e5e7eb;
+        color: #9ca3af;
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
-    <h3>HoverPrompt</h3>
-    <p class="muted">点击扩展图标进入检查模式；在页面上悬停并点击元素，输入需求后按 Enter 即可生成 Prompt 并自动复制。</p>
+    <div class="container">
+      <div class="logo">🎨</div>
+      <h1>HoverPrompt</h1>
+      <p class="subtitle">智能网页样式修改助手，让前端开发更高效</p>
+      
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-icon">✨</span>
+          <span>一键选择网页元素</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🎯</span>
+          <span>智能生成结构化 Prompt</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">📋</span>
+          <span>自动复制到剪贴板</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">🚀</span>
+          <span>无缝集成 Cursor AI</span>
+        </div>
+      </div>
+
+      <div class="usage-steps">
+        <h3 style="margin-bottom: 16px; color: #1e40af; font-size: 16px;">使用方法</h3>
+        <div class="step">
+          <div class="step-number">1</div>
+          <span>点击扩展图标开启检查模式</span>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <span>在页面上悬停并点击要修改的元素</span>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <span>输入修改需求，按 Enter 生成 Prompt</span>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <span>直接粘贴到 Cursor 即可使用</span>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>版本 0.1.0 | 专为前端开发者设计</p>
+      </div>
+    </div>
   </body>
 </html>
