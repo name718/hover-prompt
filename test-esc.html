@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>ESC键测试</title>
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .test-btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; margin: 10px; border-radius: 6px; cursor: pointer; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #dcfce7; color: #166534; }
+        .error { background: #fef2f2; color: #dc2626; }
+    </style>
+</head>
+<body>
+    <h1>🔧 ESC键功能测试</h1>
+    
+    <div>
+        <h3>测试步骤：</h3>
+        <ol>
+            <li>按 <code>Ctrl+Shift+H</code> 进入检查模式</li>
+            <li>点击下面的按钮</li>
+            <li>在弹窗中按 <code>ESC</code> 关闭弹窗</li>
+            <li>再次按 <code>ESC</code> 退出检查模式</li>
+        </ol>
+    </div>
+
+    <div>
+        <button class="test-btn">测试按钮 1</button>
+        <button class="test-btn">测试按钮 2</button>
+        <button class="test-btn">测试按钮 3</button>
+    </div>
+
+    <div id="status">等待测试...</div>
+
+    <script>
+        document.addEventListener('keydown', (e) => {
+            console.log('键盘事件:', e.key, e.ctrlKey, e.shiftKey);
+            
+            if (e.ctrlKey && e.shiftKey && e.key === 'H') {
+                document.getElementById('status').innerHTML = '<div class="status success">Ctrl+Shift+H 正常工作</div>';
+            }
+            
+            if (e.key === 'Escape') {
+                document.getElementById('status').innerHTML = '<div class="status success">ESC键被检测到 - 检查扩展状态</div>';
+                
+                // 检查扩展状态
+                setTimeout(() => {
+                    const status = document.getElementById('status');
+                    status.innerHTML += '<div class="status">请检查扩展是否已退出检查模式</div>';
+                }, 1000);
+            }
+        });
+
+        // 添加页面状态检查
+        function checkPageState() {
+            const status = document.getElementById('status');
+            const hasOverlay = document.querySelector('[style*="z-index: 2147483646"]');
+            const hasPopup = document.querySelector('[style*="z-index: 2147483647"]');
+            
+            if (hasOverlay || hasPopup) {
+                status.innerHTML += '<div class="status error">⚠️ 检测到扩展UI元素仍在页面上</div>';
+            } else {
+                status.innerHTML += '<div class="status success">✅ 页面状态正常，无扩展UI元素</div>';
+            }
+        }
+
+        // 每5秒检查一次页面状态
+        setInterval(checkPageState, 5000);
+    </script>
+</body>
+</html>

@@ -330,6 +330,8 @@
   function hidePopup() {
     if (!inputPopup) return;
     inputPopup.style.display = 'none';
+    // 重置选中状态
+    STATE.selectedEl = null;
     if (STATE.inspectMode) {
       showKeyboardHelp(); // 弹窗关闭时重新显示键盘帮助
     }
@@ -449,6 +451,10 @@
   function hideSelectedHighlight() {
     if (selectedHighlightBox) {
       selectedHighlightBox.style.display = 'none';
+    }
+    // 确保状态也被重置
+    if (STATE.selectedEl) {
+      STATE.selectedEl = null;
     }
   }
 
@@ -656,13 +662,16 @@
 
   // 添加键盘快捷键支持
   document.addEventListener('keydown', (e) => {
-    // 只在检查模式下处理快捷键
+    // 全局快捷键：Ctrl+Shift+H 切换检查模式
+    if (e.ctrlKey && e.shiftKey && e.key === 'H') {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleInspectMode();
+      return;
+    }
+
+    // 只在检查模式下处理其他快捷键
     if (!STATE.inspectMode) {
-      // Ctrl+Shift+H 切换检查模式
-      if (e.ctrlKey && e.shiftKey && e.key === 'H') {
-        e.preventDefault();
-        toggleInspectMode();
-      }
       return;
     }
 
@@ -671,14 +680,8 @@
       case 'Escape':
         e.preventDefault();
         e.stopPropagation();
-        if (inputPopup && inputPopup.style.display !== 'none') {
-          // 如果弹窗打开，先关闭弹窗
-          hidePopup();
-          hideSelectedHighlight();
-        } else {
-          // 否则退出检查模式
-          toggleInspectMode(false);
-        }
+        console.log('HoverPrompt: ESC键被按下');
+        handleEscapeKey();
         break;
       
       case 'Enter':
@@ -695,7 +698,44 @@
         }
         break;
     }
-  });
+  }, true); // 添加 true 参数，使用捕获阶段
+
+  // 处理ESC键的统一函数
+  function handleEscapeKey() {
+    if (inputPopup && inputPopup.style.display !== 'none') {
+      // 如果弹窗打开，先关闭弹窗
+      console.log('HoverPrompt: 关闭弹窗');
+      hidePopup();
+      hideSelectedHighlight();
+      // 重置选中状态
+      STATE.selectedEl = null;
+    } else {
+      // 否则退出检查模式
+      console.log('HoverPrompt: 退出检查模式');
+      // 强制重置所有状态
+      forceResetState();
+      toggleInspectMode(false);
+    }
+  }
+
+  // 强制重置所有状态的函数
+  function forceResetState() {
+    console.log('HoverPrompt: 强制重置状态');
+    STATE.hoveredEl = null;
+    STATE.selectedEl = null;
+    
+    // 隐藏所有UI元素
+    if (tooltipEl) tooltipEl.style.display = 'none';
+    if (helpTipEl) helpTipEl.style.display = 'none';
+    
+    // 确保高亮框被隐藏
+    if (selectedHighlightBox) {
+      selectedHighlightBox.style.display = 'none';
+    }
+    if (highlightBox) {
+      highlightBox.style.display = 'none';
+    }
+  }
 
   // 消息监听器
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
