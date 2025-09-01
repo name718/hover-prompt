@@ -5,22 +5,22 @@
     selectedEl: null
   };
 
-  // 优化的颜色和样式配置
+  // 优化的颜色和样式配置 - 液态玻璃效果
   const STYLES = {
     colors: {
-      primary: '#3b82f6',
-      primaryHover: '#2563eb',
+      primary: '#667eea',
+      primaryHover: '#5a67d8',
       success: '#10b981',
       warning: '#f59e0b',
       error: '#ef4444',
-      border: '#e5e7eb',
-      borderHover: '#d1d5db',
-      background: '#ffffff',
-      backgroundHover: '#f9fafb',
+      border: 'rgba(0, 0, 0, 0.1)',
+      borderHover: 'rgba(0, 0, 0, 0.2)',
+      background: 'rgba(255, 255, 255, 0.9)',
+      backgroundHover: 'rgba(255, 255, 255, 0.95)',
       text: '#1f2937',
-      textSecondary: '#6b7280',
-      textMuted: '#9ca3af',
-      mask: 'rgba(0, 0, 0, 0.4)',
+      textSecondary: '#4b5563',
+      textMuted: '#6b7280',
+      mask: 'rgba(102, 126, 234, 0.1)',
       shadow: 'rgba(0, 0, 0, 0.1)',
       shadowHover: 'rgba(0, 0, 0, 0.15)'
     },
@@ -55,7 +55,6 @@
   let overlayContainer = null;
   let highlightBox = null;
   let selectedHighlightBox = null;
-  let dimMask = null;
   let inputPopup = null;
   let toastEl = null;
   let tooltipEl = null;
@@ -73,39 +72,30 @@
       overlayContainer.style.pointerEvents = 'none';
       overlayContainer.style.zIndex = '2147483646';
 
-      dimMask = document.createElement('div');
-      dimMask.style.position = 'absolute';
-      dimMask.style.left = '0';
-      dimMask.style.top = '0';
-      dimMask.style.right = '0';
-      dimMask.style.bottom = '0';
-      dimMask.style.background = STYLES.colors.mask;
-      dimMask.style.pointerEvents = 'none';
-      dimMask.style.transition = STYLES.transitions.normal;
+
 
       highlightBox = document.createElement('div');
       highlightBox.style.position = 'absolute';
       highlightBox.style.border = `2px solid ${STYLES.colors.primary}`;
-      highlightBox.style.background = `${STYLES.colors.primary}10`;
+      highlightBox.style.background = `rgba(102, 126, 234, 0.1)`;
       highlightBox.style.boxSizing = 'border-box';
       highlightBox.style.pointerEvents = 'none';
       highlightBox.style.transition = STYLES.transitions.fast;
       highlightBox.style.borderRadius = STYLES.borderRadius.sm;
-      highlightBox.style.boxShadow = `0 0 0 1px ${STYLES.colors.primary}30`;
+      highlightBox.style.boxShadow = `0 0 0 1px rgba(102, 126, 234, 0.3), 0 4px 12px rgba(102, 126, 234, 0.2)`;
 
       // 创建选中元素的高亮框
       selectedHighlightBox = document.createElement('div');
       selectedHighlightBox.style.position = 'absolute';
       selectedHighlightBox.style.border = `3px solid ${STYLES.colors.success}`;
-      selectedHighlightBox.style.background = `${STYLES.colors.success}15`;
+      selectedHighlightBox.style.background = `rgba(16, 185, 129, 0.15)`;
       selectedHighlightBox.style.boxSizing = 'border-box';
       selectedHighlightBox.style.pointerEvents = 'none';
       selectedHighlightBox.style.transition = STYLES.transitions.fast;
       selectedHighlightBox.style.borderRadius = STYLES.borderRadius.sm;
-      selectedHighlightBox.style.boxShadow = `0 0 0 2px ${STYLES.colors.success}40`;
+      selectedHighlightBox.style.boxShadow = `0 0 0 2px rgba(16, 185, 129, 0.4), 0 8px 20px rgba(16, 185, 129, 0.3)`;
       selectedHighlightBox.style.display = 'none';
 
-      overlayContainer.appendChild(dimMask);
       overlayContainer.appendChild(highlightBox);
       overlayContainer.appendChild(selectedHighlightBox);
       document.documentElement.appendChild(overlayContainer);
@@ -125,7 +115,6 @@
     overlayContainer = null;
     highlightBox = null;
     selectedHighlightBox = null;
-    dimMask = null;
     hideKeyboardHelp();
   }
 
@@ -136,7 +125,7 @@
     inputPopup.style.maxWidth = '400px';
     inputPopup.style.width = '400px';
     inputPopup.style.background = STYLES.colors.background;
-    inputPopup.style.boxShadow = STYLES.shadows.xl;
+    inputPopup.style.boxShadow = `0 25px 50px rgba(0, 0, 0, 0.15), 0 8px 25px rgba(0, 0, 0, 0.1)`;
     inputPopup.style.borderRadius = STYLES.borderRadius.lg;
     inputPopup.style.padding = STYLES.spacing.md;
     inputPopup.style.zIndex = '2147483647';
@@ -144,7 +133,7 @@
     inputPopup.style.fontFamily = 'system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji';
     inputPopup.style.border = `1px solid ${STYLES.colors.border}`;
     inputPopup.style.transition = STYLES.transitions.normal;
-    inputPopup.style.backdropFilter = 'blur(8px)';
+
 
 
 
@@ -159,6 +148,7 @@
     currentStyle.style.fontFamily = 'monospace';
     currentStyle.style.wordBreak = 'break-all';
 
+
     const input = document.createElement('textarea');
     input.placeholder = '输入修改需求...';
     input.style.width = '100%';
@@ -171,6 +161,9 @@
     input.style.fontSize = '14px';
     input.style.fontFamily = 'inherit';
     input.style.transition = STYLES.transitions.fast;
+    input.style.background = 'rgba(255, 255, 255, 0.1)';
+    input.style.color = STYLES.colors.text;
+
 
     // 添加焦点效果
     input.addEventListener('focus', () => {
@@ -194,7 +187,7 @@
     generateBtn.textContent = '生成 Prompt';
     generateBtn.style.flex = '1';
     generateBtn.style.padding = `${STYLES.spacing.sm} ${STYLES.spacing.md}`;
-    generateBtn.style.background = STYLES.colors.primary;
+    generateBtn.style.background = `linear-gradient(135deg, ${STYLES.colors.primary}, ${STYLES.colors.primaryHover})`;
     generateBtn.style.color = 'white';
     generateBtn.style.border = 'none';
     generateBtn.style.borderRadius = STYLES.borderRadius.md;
@@ -202,6 +195,8 @@
     generateBtn.style.fontWeight = '600';
     generateBtn.style.cursor = 'pointer';
     generateBtn.style.transition = STYLES.transitions.fast;
+    generateBtn.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+
 
     generateBtn.addEventListener('mouseenter', () => {
       generateBtn.style.background = STYLES.colors.primaryHover;
@@ -217,13 +212,14 @@
     const cancelBtn = document.createElement('button');
     cancelBtn.textContent = '取消';
     cancelBtn.style.padding = `${STYLES.spacing.sm} ${STYLES.spacing.md}`;
-    cancelBtn.style.background = 'transparent';
+    cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
     cancelBtn.style.color = STYLES.colors.textSecondary;
     cancelBtn.style.border = `1px solid ${STYLES.colors.border}`;
     cancelBtn.style.borderRadius = STYLES.borderRadius.md;
     cancelBtn.style.fontSize = '14px';
     cancelBtn.style.cursor = 'pointer';
     cancelBtn.style.transition = STYLES.transitions.fast;
+
 
     cancelBtn.addEventListener('mouseenter', () => {
       cancelBtn.style.background = STYLES.colors.backgroundHover;
@@ -341,17 +337,17 @@
     if (!tooltipEl) {
       tooltipEl = document.createElement('div');
       tooltipEl.style.position = 'fixed';
-      tooltipEl.style.background = STYLES.colors.background;
-      tooltipEl.style.border = `1px solid ${STYLES.colors.border}`;
-      tooltipEl.style.borderRadius = STYLES.borderRadius.md;
-      tooltipEl.style.padding = `${STYLES.spacing.xs} ${STYLES.spacing.sm}`;
-      tooltipEl.style.fontSize = '12px';
-      tooltipEl.style.color = STYLES.colors.textSecondary;
-      tooltipEl.style.boxShadow = STYLES.shadows.md;
-      tooltipEl.style.zIndex = '2147483646';
-      tooltipEl.style.pointerEvents = 'none';
-      tooltipEl.style.transition = STYLES.transitions.fast;
-      tooltipEl.style.backdropFilter = 'blur(4px)';
+          tooltipEl.style.background = STYLES.colors.background;
+    tooltipEl.style.border = `1px solid ${STYLES.colors.border}`;
+    tooltipEl.style.borderRadius = STYLES.borderRadius.md;
+    tooltipEl.style.padding = `${STYLES.spacing.xs} ${STYLES.spacing.sm}`;
+    tooltipEl.style.fontSize = '12px';
+    tooltipEl.style.color = STYLES.colors.textSecondary;
+    tooltipEl.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
+    tooltipEl.style.zIndex = '2147483646';
+    tooltipEl.style.pointerEvents = 'none';
+    tooltipEl.style.transition = STYLES.transitions.fast;
+
       document.documentElement.appendChild(tooltipEl);
     }
 
@@ -400,13 +396,13 @@
       toastEl.style.borderRadius = STYLES.borderRadius.full;
       toastEl.style.fontSize = '14px';
       toastEl.style.fontWeight = '500';
-      toastEl.style.boxShadow = STYLES.shadows.lg;
+      toastEl.style.boxShadow = '0 15px 35px rgba(0, 0, 0, 0.2)';
       toastEl.style.zIndex = '2147483647';
       toastEl.style.display = 'flex';
       toastEl.style.alignItems = 'center';
       toastEl.style.gap = STYLES.spacing.xs;
       toastEl.style.transition = STYLES.transitions.normal;
-      toastEl.style.backdropFilter = 'blur(8px)';
+
       document.documentElement.appendChild(toastEl);
     }
 
@@ -470,11 +466,11 @@
       helpTipEl.style.padding = `${STYLES.spacing.sm} ${STYLES.spacing.md}`;
       helpTipEl.style.fontSize = '12px';
       helpTipEl.style.color = STYLES.colors.textSecondary;
-      helpTipEl.style.boxShadow = STYLES.shadows.md;
+      helpTipEl.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.15)';
       helpTipEl.style.zIndex = '2147483646';
       helpTipEl.style.pointerEvents = 'none';
       helpTipEl.style.transition = STYLES.transitions.fast;
-      helpTipEl.style.backdropFilter = 'blur(4px)';
+
       helpTipEl.style.maxWidth = '200px';
       helpTipEl.style.lineHeight = '1.4';
       document.documentElement.appendChild(helpTipEl);
