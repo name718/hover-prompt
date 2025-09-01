@@ -584,9 +584,20 @@
   }
 
   function buildPrompt(selector, styleSummary, demand) {
-    // 构建包含用户需求和元素选择器的Prompt
-    const prompt = `${demand}（元素选择器：${selector}）`;
+    // 获取当前页面信息
+    const currentUrl = window.location.href;
+    const pageTitle = document.title?.trim() || '未知页面';
     
+    // 构建包含用户需求、元素选择器和页面信息的Prompt
+    const prompt = `页面：${pageTitle}
+URL：${currentUrl}
+
+需求：${demand}
+
+元素选择器：${selector}
+
+请根据以上信息，帮我修改这个元素的样式或功能。`;
+
     return prompt;
   }
 
