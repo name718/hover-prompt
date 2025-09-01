@@ -352,7 +352,21 @@
     }
 
     const tagName = el.tagName.toLowerCase();
-    const className = el.className ? `.${el.className.split(' ').slice(0, 2).join('.')}` : '';
+    
+    // 安全地获取 className，处理 SVG 元素等特殊情况
+    let className = '';
+    try {
+      if (el.className && typeof el.className === 'string') {
+        className = `.${el.className.split(' ').slice(0, 2).join('.')}`;
+      } else if (el.className && el.className.baseVal && typeof el.className.baseVal === 'string') {
+        // 处理 SVG 元素
+        className = `.${el.className.baseVal.split(' ').slice(0, 2).join('.')}`;
+      }
+    } catch (error) {
+      console.warn('HoverPrompt: 获取 className 失败', error);
+      className = '';
+    }
+    
     const id = el.id ? `#${el.id}` : '';
     const text = el.textContent?.trim().slice(0, 30) || '';
     const displayText = `${tagName}${id}${className}${text ? ` - "${text}${text.length > 30 ? '...' : ''}"` : ''}`;
@@ -494,6 +508,10 @@
     if (!STATE.inspectMode) return;
     const el = document.elementFromPoint(e.clientX, e.clientY);
     if (!el || el === document.documentElement || el === document.body || el === overlayContainer || el === inputPopup || el === tooltipEl) return;
+    
+    // 确保元素是有效的 DOM 元素
+    if (!(el instanceof Element)) return;
+    
     STATE.hoveredEl = el;
     setHighlightForElement(el);
     showTooltip(e.clientX, e.clientY, el);
@@ -510,6 +528,9 @@
         target === overlayContainer || overlayContainer?.contains(target)) {
       return;
     }
+    
+    // 确保选中的元素是有效的 DOM 元素
+    if (!(STATE.hoveredEl instanceof Element)) return;
     
     e.preventDefault();
     e.stopPropagation();
@@ -554,8 +575,17 @@
     while (current && current.nodeType === 1 && parts.length < 4) {
       const tag = current.tagName.toLowerCase();
       let selector = tag;
-      const classList = Array.from(current.classList || []).slice(0, 2).map(cssEscape);
-      if (classList.length) selector += `.${classList.join('.')}`;
+      
+      // 安全地获取 classList，处理 SVG 元素等特殊情况
+      try {
+        if (current.classList && current.classList.length > 0) {
+          const classList = Array.from(current.classList).slice(0, 2).map(cssEscape);
+          if (classList.length) selector += `.${classList.join('.')}`;
+        }
+      } catch (error) {
+        console.warn('HoverPrompt: 获取 classList 失败', error);
+      }
+      
       const parent = current.parentElement;
       if (parent) {
         const siblings = Array.from(parent.children).filter(ch => ch.tagName === current.tagName);
