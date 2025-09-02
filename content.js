@@ -2,7 +2,10 @@
   const STATE = {
     inspectMode: false,
     hoveredEl: null,
-    selectedEl: null
+    selectedEl: null,
+    multiSelectMode: false,
+    selectedElements: [], // 多选模式下的选中元素数组
+    maxSelectCount: 10 // 最大选择数量限制
   };
 
   // 优化的颜色和样式配置 - 液态玻璃效果
@@ -59,6 +62,8 @@
   let toastEl = null;
   let tooltipEl = null;
   let helpTipEl = null;
+  let numberLabels = []; // 存储序号标签元素
+  let multiSelectHighlights = []; // 存储多选模式下的高亮框
 
   function ensureOverlay() {
     try {
@@ -115,7 +120,126 @@
     overlayContainer = null;
     highlightBox = null;
     selectedHighlightBox = null;
+    clearNumberLabels();
+    clearMultiSelectHighlights();
     hideKeyboardHelp();
+  }
+
+  // 创建序号标签
+  function createNumberLabel(number, element) {
+    const label = document.createElement('div');
+    label.textContent = number;
+    label.style.position = 'absolute';
+    label.style.background = `linear-gradient(135deg, ${STYLES.colors.primary}, ${STYLES.colors.primaryHover})`;
+    label.style.color = 'white';
+    label.style.width = '24px';
+    label.style.height = '24px';
+    label.style.borderRadius = '50%';
+    label.style.display = 'flex';
+    label.style.alignItems = 'center';
+    label.style.justifyContent = 'center';
+    label.style.fontSize = '12px';
+    label.style.fontWeight = '600';
+    label.style.zIndex = '2147483648';
+    label.style.pointerEvents = 'none';
+    label.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
+    label.style.border = '2px solid white';
+    label.style.transition = STYLES.transitions.fast;
+    
+    // 存储元素引用，用于更新位置
+    label.__element = element;
+    label.__number = number;
+    
+    return label;
+  }
+
+  // 更新序号标签位置
+  function updateNumberLabelPosition(label) {
+    if (!label.__element) return;
+    const rect = label.__element.getBoundingClientRect();
+    label.style.left = `${rect.right + window.scrollX - 12}px`;
+    label.style.top = `${rect.top + window.scrollY - 12}px`;
+  }
+
+  // 显示所有序号标签
+  function showNumberLabels() {
+    clearNumberLabels();
+    STATE.selectedElements.forEach((element, index) => {
+      const label = createNumberLabel(index + 1, element);
+      updateNumberLabelPosition(label);
+      overlayContainer.appendChild(label);
+      numberLabels.push(label);
+    });
+  }
+
+  // 清除所有序号标签
+  function clearNumberLabels() {
+    numberLabels.forEach(label => {
+      if (label.parentNode) {
+        label.parentNode.removeChild(label);
+      }
+    });
+    numberLabels = [];
+  }
+
+  // 更新序号标签位置（用于滚动和窗口大小变化）
+  function updateAllNumberLabels() {
+    numberLabels.forEach(updateNumberLabelPosition);
+  }
+
+  // 创建多选高亮框
+  function createMultiSelectHighlight(element) {
+    const highlight = document.createElement('div');
+    highlight.style.position = 'absolute';
+    highlight.style.border = `3px solid ${STYLES.colors.success}`;
+    highlight.style.background = `rgba(16, 185, 129, 0.15)`;
+    highlight.style.boxSizing = 'border-box';
+    highlight.style.pointerEvents = 'none';
+    highlight.style.transition = STYLES.transitions.fast;
+    highlight.style.borderRadius = STYLES.borderRadius.sm;
+    highlight.style.boxShadow = `0 0 0 2px rgba(16, 185, 129, 0.4), 0 8px 20px rgba(16, 185, 129, 0.3)`;
+    highlight.style.display = 'block';
+    
+    // 存储元素引用，用于更新位置
+    highlight.__element = element;
+    
+    return highlight;
+  }
+
+  // 更新多选高亮框位置
+  function updateMultiSelectHighlightPosition(highlight) {
+    if (!highlight.__element) return;
+    const rect = highlight.__element.getBoundingClientRect();
+    highlight.style.left = `${rect.left + window.scrollX}px`;
+    highlight.style.top = `${rect.top + window.scrollY}px`;
+    highlight.style.width = `${rect.width}px`;
+    highlight.style.height = `${rect.height}px`;
+  }
+
+  // 显示所有多选高亮框
+  function showMultiSelectHighlights() {
+    clearMultiSelectHighlights();
+    STATE.selectedElements.forEach((element) => {
+      const highlight = createMultiSelectHighlight(element);
+      updateMultiSelectHighlightPosition(highlight);
+      overlayContainer.appendChild(highlight);
+      multiSelectHighlights.push(highlight);
+    });
+  }
+
+  // 清除所有多选高亮框
+  function clearMultiSelectHighlights() {
+    multiSelectHighlights.forEach(highlight => {
+      if (highlight.parentNode) {
+        highlight.parentNode.removeChild(highlight);
+      }
+    });
+    multiSelectHighlights = [];
+  }
+
+  // 更新所有多选高亮框位置（用于滚动和窗口大小变化）
+  function updateAllMultiSelectHighlights() {
+    multiSelectHighlights.forEach(updateMultiSelectHighlightPosition);
   }
 
   function ensurePopup() {
@@ -232,15 +356,26 @@
     });
 
     const handleGenerate = async () => {
-      if (!STATE.selectedEl) return;
-      const selector = buildStableSelector(STATE.selectedEl);
-      const styleSummary = summarizeStyles(STATE.selectedEl);
       const userDemand = input.value.trim();
       if (!userDemand) {
         showToast('请输入修改需求', 'warning');
         return;
       }
-      const prompt = buildPrompt(selector, styleSummary, userDemand);
+
+      let prompt;
+      if (STATE.multiSelectMode && STATE.selectedElements.length > 0) {
+        // 多选模式
+        prompt = buildMultiSelectPrompt(STATE.selectedElements, userDemand);
+      } else if (STATE.selectedEl) {
+        // 单选模式
+        const selector = buildStableSelector(STATE.selectedEl);
+        const styleSummary = summarizeStyles(STATE.selectedEl);
+        prompt = buildPrompt(selector, styleSummary, userDemand);
+      } else {
+        showToast('请先选择元素', 'warning');
+        return;
+      }
+
       try {
         await navigator.clipboard.writeText(prompt);
         showToast('Prompt 已复制到剪贴板！', 'success');
@@ -285,11 +420,35 @@
     inputPopup.appendChild(buttonContainer);
     document.documentElement.appendChild(inputPopup);
 
+    // 创建多选信息显示区域
+    const multiSelectInfo = document.createElement('div');
+    multiSelectInfo.style.fontSize = '12px';
+    multiSelectInfo.style.color = STYLES.colors.primary;
+    multiSelectInfo.style.marginBottom = STYLES.spacing.sm;
+    multiSelectInfo.style.padding = `${STYLES.spacing.xs} ${STYLES.spacing.sm}`;
+    multiSelectInfo.style.background = 'rgba(102, 126, 234, 0.1)';
+    multiSelectInfo.style.borderRadius = STYLES.borderRadius.sm;
+    multiSelectInfo.style.border = `1px solid rgba(102, 126, 234, 0.3)`;
+    multiSelectInfo.style.fontWeight = '500';
+    multiSelectInfo.style.display = 'none';
+
     inputPopup.__updateStyle = (text) => {
       currentStyle.textContent = text ? `当前样式: ${text}` : '';
     };
 
+    inputPopup.__updateMultiSelectInfo = (isMultiSelect, count) => {
+      if (isMultiSelect) {
+        multiSelectInfo.textContent = `多选模式 - 已选择 ${count} 个元素`;
+        multiSelectInfo.style.display = 'block';
+      } else {
+        multiSelectInfo.style.display = 'none';
+      }
+    };
+
     inputPopup.__focusInput = () => input.focus();
+
+    // 将多选信息插入到样式信息之后
+    currentStyle.parentNode.insertBefore(multiSelectInfo, currentStyle.nextSibling);
   }
 
   function positionPopupNearRect(rect) {
@@ -319,6 +478,17 @@
     inputPopup.style.display = 'block';
     positionPopupNearRect(rect);
     inputPopup.__updateStyle(styleBrief);
+    inputPopup.__updateMultiSelectInfo(false, 0); // 单选模式
+    hideKeyboardHelp(); // 弹窗打开时隐藏键盘帮助
+    setTimeout(() => inputPopup.__focusInput(), 0);
+  }
+
+  function showMultiSelectPopup(rect, styleBrief) {
+    ensurePopup();
+    inputPopup.style.display = 'block';
+    positionPopupNearRect(rect);
+    inputPopup.__updateStyle(styleBrief);
+    inputPopup.__updateMultiSelectInfo(true, STATE.selectedElements.length);
     hideKeyboardHelp(); // 弹窗打开时隐藏键盘帮助
     setTimeout(() => inputPopup.__focusInput(), 0);
   }
@@ -369,7 +539,16 @@
     
     const id = el.id ? `#${el.id}` : '';
     const text = el.textContent?.trim().slice(0, 30) || '';
-    const displayText = `${tagName}${id}${className}${text ? ` - "${text}${text.length > 30 ? '...' : ''}"` : ''}`;
+    
+    // 检查元素状态
+    let statusText = '';
+    if (isElementDisabled(el)) {
+      statusText = ' [已禁用]';
+    } else if (hasPointerEventsNone(el)) {
+      statusText = ' [无点击事件]';
+    }
+    
+    const displayText = `${tagName}${id}${className}${text ? ` - "${text}${text.length > 30 ? '...' : ''}"` : ''}${statusText}`;
     
     tooltipEl.textContent = displayText;
     tooltipEl.style.display = 'block';
@@ -469,6 +648,10 @@
   }
 
   function showKeyboardHelp() {
+    updateKeyboardHelp();
+  }
+
+  function updateKeyboardHelp() {
     if (!helpTipEl) {
       helpTipEl = document.createElement('div');
       helpTipEl.style.position = 'fixed';
@@ -485,14 +668,19 @@
       helpTipEl.style.pointerEvents = 'none';
       helpTipEl.style.transition = STYLES.transitions.fast;
 
-      helpTipEl.style.maxWidth = '200px';
+      helpTipEl.style.maxWidth = '220px';
       helpTipEl.style.lineHeight = '1.4';
       document.documentElement.appendChild(helpTipEl);
     }
     
+    const modeText = STATE.multiSelectMode ? '多选模式' : '单选模式';
+    const modeColor = STATE.multiSelectMode ? STYLES.colors.primary : STYLES.colors.text;
+    
     helpTipEl.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 4px; color: ${STYLES.colors.text};">键盘快捷键</div>
+      <div style="color: ${modeColor}; font-weight: 500; margin-bottom: 4px;">当前: ${modeText}</div>
       <div>ESC - 退出检查模式</div>
+      <div>M - 切换多选模式</div>
       <div>Ctrl+Shift+H - 切换检查模式</div>
     `;
     helpTipEl.style.display = 'block';
@@ -506,15 +694,73 @@
 
   function onMouseMove(e) {
     if (!STATE.inspectMode) return;
-    const el = document.elementFromPoint(e.clientX, e.clientY);
-    if (!el || el === document.documentElement || el === document.body || el === overlayContainer || el === inputPopup || el === tooltipEl) return;
     
-    // 确保元素是有效的 DOM 元素
-    if (!(el instanceof Element)) return;
+    // 使用更智能的元素检测，处理禁用元素和pointer-events:none的情况
+    const el = getSelectableElement(e.clientX, e.clientY);
+    if (!el) return;
     
     STATE.hoveredEl = el;
     setHighlightForElement(el);
     showTooltip(e.clientX, e.clientY, el);
+  }
+
+  // 获取可选择的元素，处理禁用状态和pointer-events:none
+  function getSelectableElement(x, y) {
+    // 首先尝试直接获取元素
+    let el = document.elementFromPoint(x, y);
+    
+    // 如果元素不可选择，尝试向上查找可选择的父元素
+    while (el && el !== document.documentElement && el !== document.body) {
+      // 跳过扩展自己的元素
+      if (el === overlayContainer || el === inputPopup || el === tooltipEl || 
+          overlayContainer?.contains(el) || inputPopup?.contains(el) || tooltipEl?.contains(el)) {
+        el = el.parentElement;
+        continue;
+      }
+      
+      // 确保元素是有效的 DOM 元素
+      if (!(el instanceof Element)) {
+        el = el.parentElement;
+        continue;
+      }
+      
+      // 检查元素是否被禁用
+      if (isElementDisabled(el)) {
+        el = el.parentElement;
+        continue;
+      }
+      
+      // 检查元素是否有pointer-events:none
+      if (hasPointerEventsNone(el)) {
+        el = el.parentElement;
+        continue;
+      }
+      
+      // 如果元素可选择，返回它
+      return el;
+    }
+    
+    return null;
+  }
+
+  // 检查元素是否被禁用
+  function isElementDisabled(el) {
+    // 检查disabled属性
+    if (el.disabled === true) return true;
+    
+    // 检查aria-disabled属性
+    if (el.getAttribute('aria-disabled') === 'true') return true;
+    
+    // 检查是否有disabled类名
+    if (el.classList.contains('disabled')) return true;
+    
+    return false;
+  }
+
+  // 检查元素是否有pointer-events:none
+  function hasPointerEventsNone(el) {
+    const style = window.getComputedStyle(el);
+    return style.pointerEvents === 'none';
   }
 
   function onClick(e) {
@@ -534,7 +780,20 @@
     
     e.preventDefault();
     e.stopPropagation();
-    STATE.selectedEl = STATE.hoveredEl;
+    
+    if (STATE.multiSelectMode) {
+      // 多选模式
+      handleMultiSelect(STATE.hoveredEl);
+    } else {
+      // 单选模式
+      handleSingleSelect(STATE.hoveredEl);
+    }
+  }
+
+  // 处理单选
+  function handleSingleSelect(element) {
+    STATE.selectedEl = element;
+    STATE.selectedElements = [element]; // 单选时也更新多选数组
     
     // 设置选中元素的高亮
     setSelectedHighlightForElement(STATE.selectedEl);
@@ -542,6 +801,60 @@
     const rect = STATE.selectedEl.getBoundingClientRect();
     const styleBrief = summarizeStyles(STATE.selectedEl);
     showPopup(rect, styleBrief);
+  }
+
+  // 处理多选
+  function handleMultiSelect(element) {
+    const existingIndex = STATE.selectedElements.findIndex(el => el === element);
+    
+    if (existingIndex !== -1) {
+      // 如果元素已选中，则取消选择
+      STATE.selectedElements.splice(existingIndex, 1);
+      showToast(`已取消选择元素 ${existingIndex + 1}`, 'info');
+    } else {
+      // 如果元素未选中，则添加到选择列表
+      if (STATE.selectedElements.length >= STATE.maxSelectCount) {
+        showToast(`最多只能选择 ${STATE.maxSelectCount} 个元素`, 'warning');
+        return;
+      }
+      STATE.selectedElements.push(element);
+      showToast(`已选择元素 ${STATE.selectedElements.length}`, 'success');
+    }
+    
+    // 更新序号标签显示和高亮框
+    showNumberLabels();
+    showMultiSelectHighlights();
+    
+    // 如果选择了元素，显示弹窗
+    if (STATE.selectedElements.length > 0) {
+      const rect = element.getBoundingClientRect();
+      const styleBrief = summarizeStyles(element);
+      showMultiSelectPopup(rect, styleBrief);
+    } else {
+      hidePopup();
+    }
+  }
+
+  // 切换多选模式
+  function toggleMultiSelectMode() {
+    STATE.multiSelectMode = !STATE.multiSelectMode;
+    
+    if (STATE.multiSelectMode) {
+      // 进入多选模式
+      STATE.selectedElements = STATE.selectedEl ? [STATE.selectedEl] : [];
+      showToast('已进入多选模式，点击元素进行多选 (M键切换模式)', 'info');
+      showNumberLabels();
+      showMultiSelectHighlights();
+    } else {
+      // 退出多选模式
+      STATE.selectedElements = [];
+      clearNumberLabels();
+      clearMultiSelectHighlights();
+      showToast('已退出多选模式', 'info');
+    }
+    
+    // 更新帮助提示
+    updateKeyboardHelp();
   }
 
   function summarizeStyles(el) {
@@ -627,6 +940,35 @@ URL：${currentUrl}
     return prompt;
   }
 
+  function buildMultiSelectPrompt(elements, demand) {
+    // 获取当前页面信息
+    const currentUrl = window.location.href;
+    const pageTitle = document.title?.trim() || '未知页面';
+    
+    // 构建多选元素的描述
+    const elementsInfo = elements.map((element, index) => {
+      const selector = buildStableSelector(element);
+      const styleSummary = summarizeStyles(element);
+      return `元素 ${index + 1}：
+选择器：${selector}
+样式：${styleSummary}`;
+    }).join('\n\n');
+    
+    // 构建包含用户需求、多个元素选择器和页面信息的Prompt
+    const prompt = `页面：${pageTitle}
+URL：${currentUrl}
+
+需求：${demand}
+
+已选择的元素（共 ${elements.length} 个）：
+
+${elementsInfo}
+
+请根据以上信息，帮我修改这些元素的样式或功能。你可以使用"1号元素"、"2号元素"等来指代具体的元素。`;
+
+    return prompt;
+  }
+
   function inferLocationHint(el) {
     try {
       const docTitle = document.title?.trim();
@@ -657,11 +999,19 @@ URL：${currentUrl}
     window.addEventListener('scroll', () => {
       if (STATE.hoveredEl) setHighlightForElement(STATE.hoveredEl);
       if (STATE.selectedEl) setSelectedHighlightForElement(STATE.selectedEl);
+      if (STATE.multiSelectMode) {
+        updateAllNumberLabels();
+        updateAllMultiSelectHighlights();
+      }
       hideTooltip();
     }, true);
     window.addEventListener('resize', () => {
       if (STATE.hoveredEl) setHighlightForElement(STATE.hoveredEl);
       if (STATE.selectedEl) setSelectedHighlightForElement(STATE.selectedEl);
+      if (STATE.multiSelectMode) {
+        updateAllNumberLabels();
+        updateAllMultiSelectHighlights();
+      }
       hideTooltip();
     });
   }
@@ -689,6 +1039,8 @@ URL：${currentUrl}
         hideSelectedHighlight();
         STATE.hoveredEl = null;
         STATE.selectedEl = null;
+        STATE.multiSelectMode = false;
+        STATE.selectedElements = [];
         showToast('检查模式已关闭', 'info');
       }
     } catch (error) {
@@ -719,6 +1071,14 @@ URL：${currentUrl}
         e.stopPropagation();
         console.log('HoverPrompt: ESC键被按下');
         handleEscapeKey();
+        break;
+      
+      case 'm':
+      case 'M':
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('HoverPrompt: M键被按下，切换多选模式');
+        toggleMultiSelectMode();
         break;
       
       case 'Enter':
@@ -760,6 +1120,8 @@ URL：${currentUrl}
     console.log('HoverPrompt: 强制重置状态');
     STATE.hoveredEl = null;
     STATE.selectedEl = null;
+    STATE.multiSelectMode = false;
+    STATE.selectedElements = [];
     
     // 隐藏所有UI元素
     if (tooltipEl) tooltipEl.style.display = 'none';
@@ -772,6 +1134,10 @@ URL：${currentUrl}
     if (highlightBox) {
       highlightBox.style.display = 'none';
     }
+    
+    // 清除序号标签和多选高亮框
+    clearNumberLabels();
+    clearMultiSelectHighlights();
   }
 
   // 消息监听器

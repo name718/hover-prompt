@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "HoverPrompt",
   "description": "点击→高亮→输入需求→生成结构化Prompt→复制到剪贴板",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "action": {
     "default_title": "HoverPrompt"
   },
